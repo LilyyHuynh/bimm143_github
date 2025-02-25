@@ -1,0 +1,78 @@
+---
+title: "Class 12 HW: Population analysis"
+author: "Lily Huynh (PID: A16929651)"
+date: 2/13/2025
+toc: true
+format: pdf
+---
+## Section 4: Population Scale Analysis 
+
+> Q13. Read this file into R and determine the sample size for each genotype and their corresponding median expression levels for each of these genotypes. 
+
+> Ans. A/A sample size: 108, median expression levels (A/A): 31.24847; A/G sample size: 233, median expression levels (A/G): 25.06486; G/G sample size: 121, median expression levels (G/G): 20.07363
+
+```{r}
+sample.table <- read.table("rs8067378_ENSG00000172057.6.txt", header=TRUE)
+
+head(sample.table)
+```
+
+```{r}
+summary(sample.table)
+```
+
+I will use the `table()` function to figure out the sample size of each genotype. 
+
+```{r}
+sample.size.table <- table(sample.table$geno)
+sample.size.table
+```
+
+Then I will make sort the data into different tables based on the genotype. 
+
+```{r}
+library(dplyr)
+genoAA <- sample.table %>%
+  filter(geno == "A/A")
+head(genoAA)
+
+genoAG <- sample.table %>%
+  filter(geno == "A/G")
+head(genoAG)
+
+genoGG <- sample.table %>%
+  filter(geno == "G/G")
+head(genoGG)
+```
+
+Finally, I will calculate the median for each genotype 
+
+```{r}
+median(genoAA$exp)
+```
+
+```{r}
+median(genoAG$exp)
+```
+
+```{r}
+median(genoGG$exp)
+```
+
+> Q14. Generate a boxplot with a box per genotype, what could you infer from the relative expression value between A/A and G/G displayed in this plot? Does the SNP effect the expression of ORMDL3?
+
+> Ans. The relative expression value of G/G is lower compared to A/A. Therefore, alleles with G will have a lower expression compared to alleles with A. Based on the boxplot, I can see that the SNP does effect the expression of ORMDL3 because when A/A is changed to A/G, the expression levels are lower. 
+
+I created two different boxplots, using the function `boxplot()` and `ggplot()`.
+
+```{r}
+boxplot(genoAA$exp, genoAG$exp, genoGG$exp)
+```
+
+```{r}
+library(ggplot2)
+ggplot(sample.table) + 
+  aes(geno, exp, fill=geno) +
+  geom_boxplot(notch=TRUE)
+```
+
