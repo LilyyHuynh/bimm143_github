@@ -1,0 +1,307 @@
+---
+title: "Class 14: RNA-Seq analysis mini-project"
+author: "Lily Huynh (PID: A16929651)"
+date: 2/20/2025
+format: pdf
+toc: true
+---
+
+## Background
+
+The data for this hands-on session comes from GEO entry: GSE37704, which is associated with the following publication:
+
+> Trapnell C, Hendrickson DG, Sauvageau M, Goff L et al. "Differential analysis of gene regulation at transcript resolution with RNA-seq". Nat Biotechnol 2013 Jan;31(1):46-53. PMID: 23222703
+
+The authors report on differential analysis of lung fibroblasts in response to loss of the developmental transcription factor HOXA1. Their results and others indicate that HOXA1 is required for lung fibroblast and HeLa cell cycle progression. In particular their analysis show that "loss of HOXA1 results in significant expression level changes in thousands of individual transcripts, along with isoform switching events in key regulators of the cell cycle". For this session we have used their Sailfish gene-level estimated counts and hence are restricted to protein-coding genes only.
+
+## Data Import
+
+```{r}
+counts <- read.csv("GSE37704_featurecounts.csv", row.names=1)
+colData <- read.csv("GSE37704_metadata.csv")
+```
+
+
+## Inspect and tidy data 
+
+> Does the `counts` columns match the `colData` rows?
+
+>Ans. No, the `counts` columns are different compared to the`colData` rows. 
+
+```{r}
+head(counts)
+```
+
+```{r}
+head(colData)
+```
+
+```{r}
+colData$id
+```
+
+```{r}
+colnames(counts)
+```
+
+The fix here looks to be removing the first "length" column from counts:
+
+```{r}
+countData <- counts[,-1]
+head(countData)
+```
+
+Check for matching countData and colData
+
+```{r}
+colnames(countData) == colData$id
+```
+
+>Q. Complete the code below to remove the troublesome first column from countData
+
+```{r}
+# Note we need to remove the odd first $length col
+countData2 <- as.matrix(countData[,-1])
+head(countData2)
+```
+
+> Q1. How many genes in total?
+
+> Ans. There are 19808 genes in total, but some of them have a count of zero. 
+
+```{r}
+nrow(countData)
+```
+
+> Q2. Filter to remove zero count genes (rows where there are zero counts in all columns). How many genes are left?
+
+> Ans. There are 15975 genes left. 
+
+```{r}
+to.keep.inds <- rowSums(countData) > 0
+```
+
+```{r}
+new.counts <- countData[to.keep.inds, ]
+```
+
+```{r}
+nrow(new.counts)
+```
+
+>Q. Complete the code below to filter countData to exclude genes (i.e. rows) where we have 0 read count across all samples (i.e. columns).
+
+```{r}
+# Filter count data where you have 0 read count across all samples.
+countData3 = countData[to.keep.inds, ]
+head(countData3)
+```
+
+## Setup for DESeq
+
+```{r}
+#| message: false
+library(DESeq2)
+```
+
+Setup input object for DESeq
+
+```{r}
+dds <- DESeqDataSetFromMatrix(countData = new.counts,
+                              colData = colData,
+                              design = ~condition)
+```
+
+## Run DESeq
+
+```{r}
+dds <- DESeq(dds)
+res <- results(dds)
+```
+
+```{r}
+head(res)
+```
+
+```{r}
+res2 = results(dds, contrast=c("condition", "hoxa1_kd", "control_sirna"))
+res2_omitna <- res2[-which(is.na(res2$padj)),]
+```
+
+
+> Q. Call the summary() function on your results to get a sense of how many genes are up or down-regulated at the default 0.1 p-value cutoff.
+
+```{r}
+summary(res)
+```
+
+## Volcano plot of results 
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+ggplot(res) + 
+  aes(res$log2FoldChange, -log(res$padj)) +
+  geom_point(col="lightblue") +
+  geom_vline(xintercept = c(-2,2), col="red") +
+  geom_hline(yintercept = 0, col ="red")
+```
+
+>Q. Improve this plot by completing the below code, which adds color and axis labels
+
+```{r}
+# Make a color vector for all genes
+mycols <- rep("gray", nrow(res2_omitna) )
+
+# Color red the genes with absolute fold change above 2
+mycols[ abs(res2_omitna$log2FoldChange) > 2 ] <- "red"
+
+# Color blue those with adjusted p-value less than 0.01
+#  and absolute fold change more than 2
+inds <- (res2_omitna$padj<0.01) & (abs(res2_omitna$log2FoldChange) > 2 )
+mycols[ inds ] <- "blue"
+
+plot( res2_omitna$log2FoldChange, -log(res2_omitna$padj), col= mycols, xlab="Log2(FoldChange)", ylab="-Log(P-value)" )
+```
+
+```{r}
+inds <- (res2_omitna$padj<0.01) & (abs(res2_omitna$log2FoldChange) > 2 )
+mycols[ inds ] <- "blue"
+sum(inds)
+```
+
+## Gene annotation 
+
+```{r}
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+
+columns(org.Hs.eg.db)
+
+```
+
+>Q. Use the mapIDs() function multiple times to add SYMBOL, ENTREZID and GENENAME annotation to our results by completing the code below.
+
+Add gene SYMBOL and ENTREZID
+
+```{r}
+res$symbol = mapIds(org.Hs.eg.db,
+                    keys=rownames(res), 
+                    keytype="ENSEMBL",
+                    column= "SYMBOL",
+                    multiVals="first")
+
+res$entrez = mapIds(org.Hs.eg.db,
+                    keys=rownames(res),
+                    keytype="ENSEMBL",
+                    column="ENTREZID",
+                    multiVals="first")
+
+res$name = mapIds(org.Hs.eg.db,
+                    keys=rownames(res),
+                    keytype="ENSEMBL",
+                    column="GENENAME",
+                    multiVals="first")
+```
+
+```{r}
+head(res)
+```
+
+> Q. Finally for this section let's reorder these results by adjusted p-value and save them to a CSV file in your current project directory.
+
+```{r}
+#res2 = res[order(res$pvalue),]
+#write.csv(res2, file="deseq_results.csv")
+```
+
+## Pathway Analysis 
+
+```{r}
+library(gage)
+library(gageData)
+library(pathview)
+```
+
+Input vector for `gage()`
+
+```{r}
+foldchanges = res$log2FoldChange
+names(foldchanges) = res$entrez
+```
+
+Load up the KEGG gene sets
+
+```{r}
+data(kegg.sets.hs)
+```
+
+Run pathway analysis with KEGG
+
+```{r}
+keggres = gage(foldchanges, gsets=kegg.sets.hs)
+```
+
+```{r}
+head(keggres$less, 3)
+```
+
+Cell cycle figure
+
+```{r}
+pathview(foldchanges, pathway.id = "hsa04110")
+```
+
+![](hsa04110.pathview.png)
+
+DNA replication figure 
+
+```{r}
+pathview(foldchanges, pathway.id = "hsa03030")
+```
+
+![](hsa03030.pathview.png)
+
+Pathogenic Escherichia coli infection
+
+```{r}
+pathview(foldchanges, pathway.id = "hsa05130")
+```
+
+![](hsa05130.pathview.png)
+
+> Q. Can you do the same procedure as above to plot the pathview figures for the top 5 down-reguled pathways?
+
+## Gene Ontology analysis 
+
+Run pathway analysis with GO
+
+```{r}
+data(go.sets.hs)
+data(go.subs.hs)
+
+# Focus on Biological Process subset of GO
+gobpsets = go.sets.hs[go.subs.hs$BP]
+
+gobpres = gage(foldchanges, gsets=gobpsets, same.dir=TRUE)
+
+head(gobpres$less)
+```
+
+## Reactome Analysis
+
+```{r}
+sig_genes <- res[res$padj <= 0.05 & !is.na(res$padj), "symbol"]
+print(paste("Total number of significant genes:", length(sig_genes)))
+```
+
+```{r}
+write.table(sig_genes, file="significant_genes.txt", row.names=FALSE, col.names=FALSE, quote=FALSE)
+```
+
+> Q: What pathway has the most significant “Entities p-value”? Do the most significant pathways listed match your previous KEGG results? What factors could cause differences between the two methods?
+
+> Ans. Cellular response to starvation has the most significant "Entities p-value". The most significant pathways listed do not match my previous KEGG results. The differences between the two methods could be due to the input into reactome being both up and down regulated genes. However, KEGGS results uses only down regulated genes. 
+
