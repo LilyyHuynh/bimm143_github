@@ -1,0 +1,81 @@
+---
+title: "Lab 19: Cancer Mutation Analysis"
+author: "Lily Huynh (PID: A16929651)"
+date: 3/11/2025
+format: html
+---
+
+First I need to read the sequence into R
+
+```{r}
+library(bio3d)
+sequence <- read.fasta("A16929651_mutant_seq.fa")
+sequence
+```
+
+```{r}
+attributes(sequence)
+```
+
+Score conservation per position
+
+```{r}
+score <- conserv(sequence)
+head(score)
+```
+
+The sites where amino acids/residues differ are the cancer mutations. 
+
+```{r}
+positions <- which(score !=1)
+positions
+```
+
+```{r}
+residues <- sequence$ali[,positions]
+```
+
+```{r}
+paste(residues[,1], positions, residues[,2], sep="")
+```
+
+
+```{r}
+sequence$id
+```
+
+```{r}
+sequence$ali
+```
+
+Read in Alphafold CIF model and export a PDB for FTMap
+
+```{r}
+Alphafold <- unzip("fold_pik3ca_mutation.zip")
+```
+
+
+```{r, warning=FALSE}
+cif.file <- "fold_pik3ca_mutation_model_2.cif"
+
+x <- read.cif(cif.file)
+
+write.pdb(x, file="AF_model.pdb" )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

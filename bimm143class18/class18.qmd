@@ -1,0 +1,499 @@
+---
+title: "Class 18: Pertussis Mini Project"
+author: "Lily Huynh (PID: A16929651)"
+toc: true
+date: 3/6/2025
+format: pdf
+---
+
+Pertussis (a.k.a.) Whooping Cough is a deadly lung infection caused by the bacteria B. Pertussis. 
+
+The CDC tracks Pertussis cases around the US. 
+http://tinyurl.com/pertussiscdc
+
+We can "scrape" this data using the R **datapasta** package. 
+
+```{r, include = FALSE}
+cdc <- data.frame(
+  year = c(1922L,1923L,1924L,1925L,
+           1926L,1927L,1928L,1929L,1930L,1931L,
+           1932L,1933L,1934L,1935L,1936L,
+           1937L,1938L,1939L,1940L,1941L,1942L,
+           1943L,1944L,1945L,1946L,1947L,
+           1948L,1949L,1950L,1951L,1952L,
+           1953L,1954L,1955L,1956L,1957L,1958L,
+           1959L,1960L,1961L,1962L,1963L,
+           1964L,1965L,1966L,1967L,1968L,1969L,
+           1970L,1971L,1972L,1973L,1974L,
+           1975L,1976L,1977L,1978L,1979L,1980L,
+           1981L,1982L,1983L,1984L,1985L,
+           1986L,1987L,1988L,1989L,1990L,
+           1991L,1992L,1993L,1994L,1995L,1996L,
+           1997L,1998L,1999L,2000L,2001L,
+           2002L,2003L,2004L,2005L,2006L,2007L,
+           2008L,2009L,2010L,2011L,2012L,
+           2013L,2014L,2015L,2016L,2017L,2018L,
+           2019L,2020L,2021L,2022L,2024L),
+  cases = c(107473,164191,165418,152003,
+                                   202210,181411,161799,197371,
+                                   166914,172559,215343,179135,265269,
+                                   180518,147237,214652,227319,103188,
+                                   183866,222202,191383,191890,109873,
+                                   133792,109860,156517,74715,69479,
+                                   120718,68687,45030,37129,60886,
+                                   62786,31732,28295,32148,40005,
+                                   14809,11468,17749,17135,13005,6799,
+                                   7717,9718,4810,3285,4249,3036,
+                                   3287,1759,2402,1738,1010,2177,2063,
+                                   1623,1730,1248,1895,2463,2276,
+                                   3589,4195,2823,3450,4157,4570,
+                                   2719,4083,6586,4617,5137,7796,6564,
+                                   7405,7298,7867,7580,9771,11647,
+                                   25827,25616,15632,10454,13278,
+                                   16858,27550,18719,48277,28639,32971,
+                                   20762,17972,18975,15609,18617,
+                                   6124,2116,3044,35493)
+)
+```
+
+```{r}
+head(cdc)
+```
+## 1. Investing pertussis cases by year
+
+> Q1. With the help of the R “addin” package datapasta assign the CDC pertussis case number data to a data frame called cdc and use ggplot to make a plot of cases numbers over time.
+
+```{r}
+library(ggplot2)
+
+# data
+# aes
+# geoms
+
+ggplot(cdc) +
+  aes(year, cases) +
+  geom_line() + 
+  geom_point()
+```
+
+## 2. A tale of two vaccines (wP&aP)
+
+```{r}
+ggplot(cdc) +
+  aes(year, cases) +
+  geom_line() +
+  geom_vline(xintercept = 1946, col="blue") +
+  geom_vline(xintercept = 1996, col="red") +
+  geom_vline(xintercept = 2020, col="grey") +
+  geom_vline(xintercept = 2003, col="darkgreen")
+```
+
+> Q2. Using the ggplot geom_vline() function add lines to your previous plot for the 1946 introduction of the wP vaccine and the 1996 switch to aP vaccine (see example in the hint below). What do you notice?
+
+> Ans. I notice that after the wP vaccine, the number of cases have signficantly decreased. The number of cases are close to zero. After the aP vaccine, I noticed that the number of cases has started to increase again around 2004.
+
+```{r}
+ggplot(cdc) +
+  aes(year, cases) +
+  geom_line() +
+  geom_vline(xintercept = 1946, col="blue") +
+  geom_vline(xintercept = 1996, col="red")
+```
+
+There were high case numbers before the first wP (whole-cell) vaccine roll out in 1946 then a rapid decline in case numbers until 2004 when we have our first large-scale outbreak of pertussis again. There is also a notable COVID related dip and recent rapid rise. 
+
+Q. What is different about the immune response to infection if you had an older wP vaccine vs the newer aP vaccine? 
+
+> Q3. Describe what happened after the introduction of the aP vaccine? Do you have a possible explaination for the observed trend? 
+
+> Ans. After the introduction of the aP vaccine, the number of cases started to increase around 8 years after (2004). This could probably be due to a decrease in immunity over time. Since the aP doesn't contain the whole cell, the antibodies might have a hard time recognizing pertussis as the years pass. Therefore, booster shots are needed. 
+
+## 3. Computational Models of Immunity - Pertussis Boost (CMI-PB)
+
+The CMI-PB project aims to address this key question: What is the difference between aP and wP individuals. 
+
+We can get all the data from this ongoing project via JSON API calls. 
+For this we will use the **jsonlite** package. We can install with:
+`install.packages("jsonlite")`
+
+```{r}
+library(jsonlite)
+subject <- read_json("https://www.cmi-pb.org/api/v5_1/subject",
+                     simplifyVector = TRUE)
+
+head(subject)
+```
+
+> Q. How many individuals "subjects" are in this data set?
+
+```{r}
+nrow(subject)
+```
+
+> Q4. How many aP and wP infancy vaccinated subjects are in the dataset? 
+
+> Ans. There are 87 aP and 85 wP infancy vaccinated subjects in the dataset. 
+
+```{r}
+table(subject$infancy_vac)
+```
+
+> Q5. How many Male and Female subjects/patients are in the dataset?
+
+> Ans. There are 112 females and 60 males in this dataset. 
+
+```{r}
+table(subject$biological_sex)
+```
+
+> Q6. What is the breakdown of race and biological sex (e.g. number of Asian females, White males etc...)?
+
+```{r}
+table(subject$race, subject$biological_sex)
+```
+
+This is not representative of the US population but it is the biggest dataset of its type so let's see what we can learn...
+
+> Q7. Using this approach determine (i) the average age of wP individuals, (ii) the average age of aP indivuals, and (iii) are they signficantly different?
+
+> Ans. The average age of wP individuals are 35.83 years and the average age of aP individuals are 27.08 years. Since the calculated p-value is less than 0.05, they are signifcantly different. 
+
+```{r}
+library(lubridate)
+
+## First I need to calculate how old they are now in days
+
+subject$age <- today() - ymd(subject$year_of_birth)
+
+head(subject$age)
+```
+
+```{r}
+# Calculate the age of aP and wP
+
+library(dplyr)
+
+aP <- subject %>%
+  filter(infancy_vac == "aP")
+
+summary(time_length(aP$age, "years"))
+
+wP <- subject %>%
+  filter(infancy_vac == "wP")
+
+summary(time_length(wP$age, "years"))
+
+# Calculate the p.value 
+
+result <- t.test(time_length(wP$age, "years"), time_length(aP$age, "years"))
+result$p.value
+```
+
+> Q8. Determine the age of all individuals at time of boost? 
+
+> Ans. See the code below 
+
+```{r}
+boost_time <- ymd(subject$date_of_boost) - ymd(subject$year_of_birth)
+
+age_at_boost <- time_length(boost_time, "year")
+
+age_at_boost
+```
+
+> Q9. With the help of a faceted boxplot or histogram (see below), do you think these two groups are signficantly different? 
+
+> Ans. Based on the histograms, I think these two groups are signficantly different. 
+
+```{r}
+ggplot(subject) +
+  aes(time_length(age, "year"),
+      fill=as.factor(infancy_vac)) +
+  geom_histogram(show.legend=FALSE) +
+  facet_wrap(vars(infancy_vac), nrow=2) +
+  xlab("Age in years")
+```
+
+Obtain more data from CMI-PB:
+
+```{r}
+specimen <- read_json("http://cmi-pb.org/api/v5_1/specimen",
+                      simplifyVector = TRUE)
+
+ab_data <- read_json("http://cmi-pb.org/api/v5_1/plasma_ab_titer",
+                     simplifyVector = TRUE)
+```
+
+```{r}
+head(specimen)
+```
+
+```{r}
+head(ab_data)
+```
+
+I now have 3 tables of data from CMI-PB: `subject`, `specimen`, and `ab_data`. I need to "join" these tables so I will have all the info I need to work with. 
+
+For this we will use the `inner_join()` function from the **dplyr** package. 
+
+> Q9. Complete the code to join specimen and subject tables to make a new merged data frame containing all specimen records along with their associated subject details: 
+
+```{r}
+library(dplyr)
+
+meta <- inner_join(specimen, subject)
+dim(meta)
+head(meta)
+```
+
+```{r}
+dim(subject)
+dim(specimen)
+```
+
+> Q10. Now using the same procedure join meta with titer data so we can further analyze this data in terms of time of visit aP/wP, male/female etc.
+
+Now we can join our `ab_data` table to `meta` so we have all the info we need about antibody levels. 
+
+```{r}
+abdata <- inner_join(ab_data, meta)
+dim(abdata)
+head(abdata)
+```
+
+> Q. How many different antibody isotypes are there in this dataset? 
+
+```{r}
+length(abdata$isotype)
+```
+
+> Q11. How many specimens (i.e. entries in abdata) do we have for each isotype? 
+
+> Ans. See table below
+
+```{r}
+table(abdata$isotype)
+```
+
+> Q12. What are the different $dataset values in abdata and what do you notice about the number of rows for the most “recent” dataset?
+
+> Ans. See table below for the different $dataset values in abdata. I noticed that the most recent dataset (2023) has way less rows compared to the oldest dataset (2020).
+
+```{r}
+table(abdata$dataset)
+```
+
+
+```{r}
+table(abdata$antigen)
+```
+
+I want a plot of antigen levels across the whole data set
+
+```{r}
+ggplot(abdata) +
+  aes(MFI, antigen) + 
+  geom_boxplot()
+```
+
+```{r}
+ggplot(abdata) +
+  aes(MFI_normalised, antigen) + 
+  geom_boxplot()
+```
+
+Antigens like FIM2/3, PT, and FELD1 have quite a large range of values.
+Others like Measles don't show much activity
+
+> Q. Are there differences at this whole-dataset level between aP and wP? 
+
+```{r}
+ggplot(abdata) +
+  aes(MFI_normalised, antigen, col= infancy_vac) +
+  geom_boxplot()
+```
+
+```{r}
+ggplot(abdata) +
+  aes(MFI_normalised, antigen, col= infancy_vac) +
+  geom_boxplot() + 
+  facet_wrap(~infancy_vac)
+```
+
+## 4. Examine IgG Ab titer levels
+
+For this, I need to select out just isotype IgG
+
+```{r}
+igg <- abdata %>% 
+  filter(isotype == "IgG")
+head(igg)
+```
+
+An overview boxplot:
+
+```{r}
+ggplot(igg) +
+  aes(MFI_normalised, antigen, col= infancy_vac) +
+  geom_boxplot()
+```
+
+> Q13. Complete the following code to make a summary boxplot of Ab titer levels (MFI) for all antigens:
+
+> See code below: 
+
+```{r}
+ggplot(igg) +
+  aes(MFI_normalised, antigen) +
+  geom_boxplot() + 
+    xlim(0,75) +
+  facet_wrap(vars(visit), nrow=2)
+```
+
+> Q14. What antigens show differences in the level of IgG antibody titers recognizing them over time? Why these and not others?
+
+> Ans. FIM2/3, FHA, and PRN antigens show differences in the level of IgG antibody titers recognizing them over time. These are showing difference in levels because these antigens are components of the bacteria. 
+
+> Q15. Filter to pull out only two specific antigens for analysis and create a boxplot for each. You can chose any you like. Below I picked a “control” antigen (“OVA”, that is not in our vaccines) and a clear antigen of interest (“PT”, Pertussis Toxin, one of the key virulence factors produced by the bacterium B. pertussis).
+
+> Ans. Look at the code below: 
+
+```{r}
+filter(igg, antigen=="OVA") %>%
+  ggplot() +
+  aes(MFI_normalised, col=infancy_vac) +
+  geom_boxplot(show.legend = TRUE) +
+  facet_wrap(vars(visit)) +
+  theme_bw()
+```
+
+```{r}
+filter(igg, antigen=="PRN") %>%
+  ggplot() +
+  aes(MFI_normalised, col=infancy_vac) +
+  geom_boxplot(show.legend = TRUE) +
+  facet_wrap(vars(visit)) +
+  theme_bw()
+```
+
+> Q16. What do you notice about these two antigens time courses and the PT data in particular?
+
+> Ans. I noticed that the PT and PRN antigens have higher levels compared to the OVA antigen. They rise over time, while OVA barely changes over time. The aP and wP subjects are very similar for all antigens. 
+
+```{r}
+filter(igg, antigen=="PT") %>%
+  ggplot() +
+  aes(MFI_normalised, col=infancy_vac) +
+  geom_boxplot(show.legend = TRUE) +
+  facet_wrap(vars(visit)) +
+  theme_bw()
+```
+
+> Q17. Do you see any clear difference in aP vs. wP responses?
+
+> I noticed that wP response show a bit higher values for each antigen that is in the vaccine compared to the aP. The OVA levels are pretty similar for wP and aP. 
+
+Digging in further to look at the time course of IgG isotype PT antigen levels across aP and wP individuals: 
+
+```{r}
+## Filter to include 2021 data only 
+abdata.21 <- abdata %>% 
+  filter(dataset == "2021_dataset")
+
+## Filter to look at IgG PT data only 
+pt.igg <- abdata.21 %>% 
+  filter(isotype == "IgG",  antigen == "PT")
+  
+## Plot and color by infancy_vac (wP vs aP)
+ggplot(pt.igg) +
+    aes(x=planned_day_relative_to_boost,
+        y=MFI_normalised,
+        col=infancy_vac,
+        group=subject_id) +
+    geom_point() +
+    geom_line() +
+    geom_vline(xintercept=0, linetype="dashed") +
+    geom_vline(xintercept=14, linetype="dashed") +
+  labs(title="2021 dataset IgG PT",
+       subtitle = "Dashed lines indicate day 0 (pre-boost) and 14 (apparent peak levels)")
+```
+
+> Q18. Does this trend look similar for the 2020 dataset?
+
+> Ans. This trend looks kind of similar for the 2020, but there some outliers in wP which causes the graph to look more compressed together. 
+
+```{r}
+## Filter to include 2021 data only 
+abdata.20 <- abdata %>% 
+  filter(dataset == "2020_dataset")
+
+## Filter to look at IgG PT data only 
+pt.igg <- abdata.20 %>% 
+  filter(isotype == "IgG",  antigen == "PT")
+  
+## Plot and color by infancy_vac (wP vs aP)
+ggplot(pt.igg) +
+    aes(x=planned_day_relative_to_boost,
+        y=MFI_normalised,
+        col=infancy_vac,
+        group=subject_id) +
+    geom_point() +
+    geom_line() +
+    geom_vline(xintercept=0, linetype="dashed") +
+    geom_vline(xintercept=14, linetype="dashed") +
+  labs(title="2020 dataset IgG PT",
+       subtitle = "Dashed lines indicate day 0 (pre-boost) and 14 (apparent peak levels)")
+```
+
+## 5. Obtaining CMI-PB RNASeq data
+
+```{r}
+url <- "https://www.cmi-pb.org/api/v2/rnaseq?versioned_ensembl_gene_id=eq.ENSG00000211896.7"
+
+rna <- read_json(url, simplifyVector = TRUE) 
+```
+
+```{r}
+#meta <- inner_join(specimen, subject)
+ssrna <- inner_join(rna, meta)
+```
+
+> Q19. Make a plot of the time course of gene expression for IGHG1 gene (i.e. a plot of visit vs. tpm).
+
+> Ans. Look at code below:
+
+```{r}
+ggplot(ssrna) +
+  aes(visit, tpm, group=subject_id) +
+  geom_point() +
+  geom_line(alpha=0.2)
+```
+
+> Q20.: What do you notice about the expression of this gene (i.e. when is it at it’s maximum level)?
+
+> Ans. The maximum levels occur on visit 4 and 8. 
+
+> Q21. Does this pattern in time match the trend of antibody titer data? If not, why not?
+
+> Ans. The pattern in time doesn't completely match the trend of antibody titer data. The peak in antibody titer data occurs around visit 5 and then slolwy decreases. However, the pattern for time has two peaks before it decreases. 
+
+```{r}
+ggplot(ssrna) +
+  aes(tpm, col=infancy_vac) +
+  geom_boxplot() +
+  facet_wrap(vars(visit))
+```
+
+```{r}
+ssrna %>%  
+  filter(visit==4) %>% 
+  ggplot() +
+    aes(tpm, col=infancy_vac) + geom_density() + 
+    geom_rug() 
+```
+
+## 6. Working with larger datasets [OPTIONAL]
+
+THE DATA ISN'T DOWNLOADING because the website doesn't exist (can't do the optional)
+
+
