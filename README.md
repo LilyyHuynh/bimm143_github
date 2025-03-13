@@ -24,6 +24,10 @@ My classwork from W25 [BIMM143](https://bioboot.github.io/bimm143_W25/) at UC Sa
 
 - Class14 [RNA-Seq mini project](https://htmlpreview.github.io/?https://raw.githubusercontent.com/LilyyHuynh/bimm143_github/refs/heads/main/bimm143class14/class14.html)
 
-- Class15 [Hands-on with Git and GitHub](https://htmlpreview.github.io/?)
+- Class17 [](https://htmlpreview.github.io/?https://raw.githubusercontent.com/LilyyHuynh/bimm143_github/refs/heads/main/BIMM143class17/bimm143class17.html)
+
+- Class18 [](https://htmlpreview.github.io/?https://raw.githubusercontent.com/LilyyHuynh/bimm143_github/refs/heads/main/bimm143class18/class18.html)
+
+- Class19 [](https://htmlpreview.github.io/?https://raw.githubusercontent.com/LilyyHuynh/bimm143_github/refs/heads/main/BIMM143class19/class19.html)
 
 
