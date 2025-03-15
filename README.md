@@ -28,6 +28,6 @@ My classwork from W25 [BIMM143](https://bioboot.github.io/bimm143_W25/) at UC Sa
 
 - Class18 [Investigating pertussis resurgence mini project](https://htmlpreview.github.io/?https://raw.githubusercontent.com/LilyyHuynh/bimm143_github/refs/heads/main/bimm143class18/class18.html)
 
-- Class19 [Mini Project: Cancer Mutation Analysis](https://htmlpreview.github.io/?https://raw.githubusercontent.com/LilyyHuynh/bimm143_github/refs/heads/main/BIMM143class19/class19.html)
+- Class19 [Mini Project: Cancer Mutation Analysis](https://github.com/LilyyHuynh/bimm143_github/blob/main/BIMM143class19/lab19.pdf)
 
 
